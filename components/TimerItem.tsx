@@ -3,30 +3,34 @@ import { View, Text, TouchableOpacity } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { formatTime } from "../utils/time";
 import ProgressBar from "./ProgressBar";
+import BulkActions from "./BulkAction";
 
 export interface Timer {
   id: string;
   name: string;
-  duration: number; // total duration in seconds
-  remainingTime: number; // remaining time (when paused) in seconds
+  duration: number;
+  remainingTime: number;
   isRunning: boolean;
   category: string;
-  startTimestamp?: number | null; // timestamp (ms) when timer started
+  startTimestamp: number | null;
 }
 
 interface TimerItemProps {
   timer: Timer;
+  timers: Timer[];
   refreshTimers: () => void;
 }
 
-export default function TimerItem({ timer, refreshTimers }: TimerItemProps) {
-  // currentRemaining will be computed based on the startTimestamp if running
+export default function TimerItem({
+  timer,
+  timers,
+  refreshTimers,
+}: TimerItemProps) {
   const [currentRemaining, setCurrentRemaining] = useState(timer.remainingTime);
 
   useEffect(() => {
     let interval: NodeJS.Timeout | null = null;
     if (timer.isRunning && timer.startTimestamp) {
-      // Function to update the remaining time based on the elapsed time
       const updateRemaining = () => {
         const elapsed = (Date.now() - timer.startTimestamp!) / 1000;
         const newRemaining = Math.max(timer.remainingTime - elapsed, 0);
@@ -46,7 +50,6 @@ export default function TimerItem({ timer, refreshTimers }: TimerItemProps) {
     };
   }, [timer]);
 
-  // Save updated timer to AsyncStorage
   const saveTimer = async (updatedTimer: Timer) => {
     const storedTimers = await AsyncStorage.getItem("timers");
     if (storedTimers) {
@@ -59,7 +62,6 @@ export default function TimerItem({ timer, refreshTimers }: TimerItemProps) {
     }
   };
 
-  // Delete timer from AsyncStorage
   const deleteTimer = async () => {
     const storedTimers = await AsyncStorage.getItem("timers");
     if (storedTimers) {
@@ -70,10 +72,8 @@ export default function TimerItem({ timer, refreshTimers }: TimerItemProps) {
     }
   };
 
-  // Toggle between starting and pausing the timer
   const toggleStartPause = () => {
     if (timer.isRunning) {
-      // Pause: compute elapsed time and update remainingTime
       const elapsed = (Date.now() - (timer.startTimestamp || 0)) / 1000;
       const updatedRemaining = Math.max(timer.remainingTime - elapsed, 0);
       const updatedTimer: Timer = {
@@ -84,7 +84,6 @@ export default function TimerItem({ timer, refreshTimers }: TimerItemProps) {
       };
       saveTimer(updatedTimer);
     } else {
-      // Start: record the current time as startTimestamp
       const updatedTimer: Timer = {
         ...timer,
         isRunning: true,
@@ -94,7 +93,6 @@ export default function TimerItem({ timer, refreshTimers }: TimerItemProps) {
     }
   };
 
-  // Reset the timer to its original duration
   const resetTimer = () => {
     const updatedTimer: Timer = {
       ...timer,
@@ -106,14 +104,12 @@ export default function TimerItem({ timer, refreshTimers }: TimerItemProps) {
     saveTimer(updatedTimer);
   };
 
-  // When the timer reaches 0, mark it as completed and log it to history
   const markAsCompleted = async () => {
     const storedHistory = await AsyncStorage.getItem("history");
     const history = storedHistory ? JSON.parse(storedHistory) : [];
     history.push({ name: timer.name, completedAt: new Date().toISOString() });
     await AsyncStorage.setItem("history", JSON.stringify(history));
 
-    // Mark the timer as completed
     const updatedTimer: Timer = {
       ...timer,
       isRunning: false,
@@ -123,11 +119,15 @@ export default function TimerItem({ timer, refreshTimers }: TimerItemProps) {
     await saveTimer(updatedTimer);
   };
 
-  // Calculate elapsed seconds for the progress bar
   const elapsed = timer.duration - currentRemaining;
 
   return (
     <View style={{ padding: 16, borderWidth: 1, marginBottom: 8 }}>
+      <BulkActions
+        category={timer.category}
+        timers={timers}
+        refreshTimers={refreshTimers}
+      />
       <Text style={{ fontSize: 18 }}>{timer.name}</Text>
       <Text style={{ fontSize: 16, color: "black" }}>
         {currentRemaining > 0

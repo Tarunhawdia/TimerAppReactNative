@@ -19,6 +19,7 @@ interface Timer {
   category: string;
   remainingTime: number;
   isRunning: boolean;
+  startTimestamp: number | null;
 }
 
 export default function HomeScreen() {
@@ -82,6 +83,7 @@ export default function HomeScreen() {
                   <TimerItem
                     key={timer.id}
                     timer={timer}
+                    timers={timers}
                     refreshTimers={loadTimers}
                   />
                 ))}
