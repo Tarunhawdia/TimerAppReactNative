@@ -4,44 +4,54 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { formatTime } from "../utils/time";
 import ProgressBar from "./ProgressBar";
 
-interface TimerProps {
-  timer: {
-    id: string;
-    name: string;
-    duration: number;
-    remainingTime: number;
-    isRunning: boolean;
-    category: string;
-  };
+export interface Timer {
+  id: string;
+  name: string;
+  duration: number; // total duration in seconds
+  remainingTime: number; // remaining time (when paused) in seconds
+  isRunning: boolean;
+  category: string;
+  startTimestamp?: number | null; // timestamp (ms) when timer started
+}
+
+interface TimerItemProps {
+  timer: Timer;
   refreshTimers: () => void;
 }
 
-export default function TimerItem({ timer, refreshTimers }: TimerProps) {
-  const [remainingTime, setRemainingTime] = useState(timer.remainingTime);
-  const [isRunning, setIsRunning] = useState(timer.isRunning);
+export default function TimerItem({ timer, refreshTimers }: TimerItemProps) {
+  // currentRemaining will be computed based on the startTimestamp if running
+  const [currentRemaining, setCurrentRemaining] = useState(timer.remainingTime);
 
   useEffect(() => {
-    let interval: NodeJS.Timeout;
-    if (isRunning) {
-      interval = setInterval(() => {
-        setRemainingTime((prev) => {
-          if (prev <= 1) {
-            clearInterval(interval);
-            markAsCompleted();
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
+    let interval: NodeJS.Timeout | null = null;
+    if (timer.isRunning && timer.startTimestamp) {
+      // Function to update the remaining time based on the elapsed time
+      const updateRemaining = () => {
+        const elapsed = (Date.now() - timer.startTimestamp!) / 1000;
+        const newRemaining = Math.max(timer.remainingTime - elapsed, 0);
+        setCurrentRemaining(newRemaining);
+        if (newRemaining <= 0) {
+          if (interval) clearInterval(interval);
+          markAsCompleted();
+        }
+      };
+      updateRemaining();
+      interval = setInterval(updateRemaining, 1000);
+    } else {
+      setCurrentRemaining(timer.remainingTime);
     }
-    return () => clearInterval(interval);
-  }, [isRunning]);
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [timer]);
 
-  const saveTimers = async (updatedTimer: any) => {
+  // Save updated timer to AsyncStorage
+  const saveTimer = async (updatedTimer: Timer) => {
     const storedTimers = await AsyncStorage.getItem("timers");
     if (storedTimers) {
-      const timers = JSON.parse(storedTimers);
-      const updatedTimers = timers.map((t: any) =>
+      const timers: Timer[] = JSON.parse(storedTimers);
+      const updatedTimers = timers.map((t) =>
         t.id === updatedTimer.id ? updatedTimer : t
       );
       await AsyncStorage.setItem("timers", JSON.stringify(updatedTimers));
@@ -49,41 +59,68 @@ export default function TimerItem({ timer, refreshTimers }: TimerProps) {
     }
   };
 
+  // Toggle between starting and pausing the timer
   const toggleStartPause = () => {
-    setIsRunning(!isRunning);
-    saveTimers({ ...timer, isRunning: !isRunning, remainingTime });
+    if (timer.isRunning) {
+      // Pause: compute elapsed time and update remainingTime
+      const elapsed = (Date.now() - (timer.startTimestamp || 0)) / 1000;
+      const updatedRemaining = Math.max(timer.remainingTime - elapsed, 0);
+      const updatedTimer: Timer = {
+        ...timer,
+        isRunning: false,
+        remainingTime: updatedRemaining,
+        startTimestamp: null,
+      };
+      saveTimer(updatedTimer);
+    } else {
+      // Start: record the current time as startTimestamp
+      const updatedTimer: Timer = {
+        ...timer,
+        isRunning: true,
+        startTimestamp: Date.now(),
+      };
+      saveTimer(updatedTimer);
+    }
   };
 
+  // Reset the timer to its original duration
   const resetTimer = () => {
-    setIsRunning(false);
-    setRemainingTime(timer.duration);
-    saveTimers({ ...timer, isRunning: false, remainingTime: timer.duration });
+    const updatedTimer: Timer = {
+      ...timer,
+      isRunning: false,
+      remainingTime: timer.duration,
+      startTimestamp: null,
+    };
+    setCurrentRemaining(timer.duration);
+    saveTimer(updatedTimer);
   };
 
+  // When the timer reaches 0, mark it as completed and log it to history
   const markAsCompleted = async () => {
     const storedHistory = await AsyncStorage.getItem("history");
     const history = storedHistory ? JSON.parse(storedHistory) : [];
     history.push({ name: timer.name, completedAt: new Date().toISOString() });
     await AsyncStorage.setItem("history", JSON.stringify(history));
 
-    const storedTimers = await AsyncStorage.getItem("timers");
-    if (storedTimers) {
-      const timers = JSON.parse(storedTimers).filter(
-        (t: any) => t.id !== timer.id
-      );
-      await AsyncStorage.setItem("timers", JSON.stringify(timers));
-      refreshTimers();
-    }
+    // Mark the timer as completed
+    const updatedTimer: Timer = {
+      ...timer,
+      isRunning: false,
+      remainingTime: 0,
+      startTimestamp: null,
+    };
+    await saveTimer(updatedTimer);
+    resetTimer();
   };
 
-  // Calculate elapsed time for progress (duration - remaining)
-  const elapsed = timer.duration - remainingTime;
+  // Calculate elapsed seconds for the progress bar
+  const elapsed = timer.duration - currentRemaining;
 
   return (
     <View style={{ padding: 16, borderWidth: 1, marginBottom: 8 }}>
       <Text style={{ fontSize: 18 }}>{timer.name}</Text>
       <Text style={{ fontSize: 16, color: "gray" }}>
-        {formatTime(remainingTime)}
+        {formatTime(Math.floor(currentRemaining))}
       </Text>
       <ProgressBar current={elapsed} total={timer.duration} />
       <View style={{ flexDirection: "row", marginTop: 8 }}>
@@ -91,8 +128,8 @@ export default function TimerItem({ timer, refreshTimers }: TimerProps) {
           onPress={toggleStartPause}
           style={{ marginRight: 10 }}
         >
-          <Text style={{ color: isRunning ? "red" : "green" }}>
-            {isRunning ? "Pause" : "Start"}
+          <Text style={{ color: timer.isRunning ? "red" : "green" }}>
+            {timer.isRunning ? "Pause" : "Start"}
           </Text>
         </TouchableOpacity>
         <TouchableOpacity onPress={resetTimer}>

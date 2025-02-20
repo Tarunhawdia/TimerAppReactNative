@@ -7,11 +7,7 @@ interface CategoryHeaderProps {
   onPress: () => void;
 }
 
-export default function CategoryHeader({
-  category,
-  expanded,
-  onPress,
-}: CategoryHeaderProps) {
+export default function CategoryHeader({category,expanded, onPress}: CategoryHeaderProps) {
   return (
     <TouchableOpacity
       onPress={onPress}
