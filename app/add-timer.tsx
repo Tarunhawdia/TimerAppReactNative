@@ -4,7 +4,17 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
 import { v4 as uuidv4 } from "uuid";
 
+import { useNavigation } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { RootStackParamList } from "../components/AppNavigator";
+export type HomeScreenNavigationProp = NativeStackNavigationProp<
+  RootStackParamList,
+  "Home"
+>;
+
 export default function AddTimerScreen() {
+  const navigation = useNavigation<HomeScreenNavigationProp>();
+
   const [name, setName] = useState("");
   const [duration, setDuration] = useState("");
   const [category, setCategory] = useState("");
@@ -30,7 +40,7 @@ export default function AddTimerScreen() {
     timers.push(newTimer);
 
     await AsyncStorage.setItem("timers", JSON.stringify(timers));
-    router.push("/");
+    router.back();
   };
 
   const goBack = () => {
