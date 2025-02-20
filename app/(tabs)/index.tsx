@@ -1,10 +1,16 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, FlatList, TouchableOpacity } from "react-native";
+import {
+  View,
+  Text,
+  FlatList,
+  TouchableOpacity,
+  StyleSheet,
+} from "react-native";
 import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import TimerItem from "../../components/TimerItem";
 import CategoryHeader from "../../components/CategoryHeader";
-import BulkActions from "../../components/BulkActions";
+import NavigationBar from "../../components/NavigatonBar";
 
 interface Timer {
   id: string;
@@ -47,14 +53,18 @@ export default function HomeScreen() {
   }, {} as Record<string, Timer[]>);
 
   return (
-    <View style={{ flex: 1, padding: 16 }}>
-      <Text style={{ fontSize: 24, fontWeight: "bold", marginBottom: 16 }}>
-        Timers
-      </Text>
+    <View style={styles.container}>
+      <Text style={styles.title}>Timers</Text>
+      <NavigationBar />
 
-      <TouchableOpacity onPress={() => router.push("/add-timer")}>
-        <Text style={{ fontSize: 18, color: "blue" }}>+ Add Timer</Text>
-      </TouchableOpacity>
+      <View style={styles.buttonsContainer}>
+        <TouchableOpacity
+          style={styles.button}
+          onPress={() => router.push("/add-timer")}
+        >
+          <Text style={styles.buttonText}>+ Add Timer</Text>
+        </TouchableOpacity>
+      </View>
 
       <FlatList
         data={Object.keys(groupedTimers)}
@@ -68,11 +78,6 @@ export default function HomeScreen() {
             />
             {expandedCategories[category] && (
               <>
-                <BulkActions
-                  category={category}
-                  timers={groupedTimers[category]}
-                  refreshTimers={loadTimers}
-                />
                 {groupedTimers[category].map((timer) => (
                   <TimerItem
                     key={timer.id}
@@ -88,3 +93,20 @@ export default function HomeScreen() {
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: { flex: 1, padding: 16 },
+  title: { fontSize: 24, fontWeight: "bold", marginBottom: 16 },
+  buttonsContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 16,
+  },
+  button: {
+    backgroundColor: "blue",
+    padding: 10,
+    borderRadius: 5,
+    marginTop: 10,
+  },
+  buttonText: { color: "white", fontSize: 16 },
+});

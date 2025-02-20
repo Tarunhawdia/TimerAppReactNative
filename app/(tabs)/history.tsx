@@ -1,12 +1,13 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
   FlatList,
-  StyleSheet,
   TouchableOpacity,
+  StyleSheet,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import NavigationBar from "../../components/NavigatonBar";
 
 interface HistoryItem {
   name: string;
@@ -21,15 +22,23 @@ export default function HistoryScreen() {
   }, []);
 
   const loadHistory = async () => {
-    const storedHistory = await AsyncStorage.getItem("history");
-    if (storedHistory) {
-      setHistory(JSON.parse(storedHistory));
+    try {
+      const storedHistory = await AsyncStorage.getItem("history");
+      if (storedHistory) {
+        setHistory(JSON.parse(storedHistory));
+      }
+    } catch (error) {
+      console.error("Error loading history:", error);
     }
   };
 
   const clearHistory = async () => {
-    await AsyncStorage.removeItem("history");
-    setHistory([]);
+    try {
+      await AsyncStorage.removeItem("history");
+      setHistory([]);
+    } catch (error) {
+      console.error("Error clearing history:", error);
+    }
   };
 
   const renderItem = ({ item }: { item: HistoryItem }) => {
@@ -45,6 +54,8 @@ export default function HistoryScreen() {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Timer History</Text>
+      <NavigationBar />
+
       <FlatList
         data={history}
         keyExtractor={(_, index) => index.toString()}
@@ -53,7 +64,7 @@ export default function HistoryScreen() {
           <Text style={styles.emptyText}>No history available.</Text>
         }
       />
-      <TouchableOpacity onPress={clearHistory} style={styles.clearButton}>
+      <TouchableOpacity style={styles.clearButton} onPress={clearHistory}>
         <Text style={styles.clearButtonText}>Clear History</Text>
       </TouchableOpacity>
     </View>
