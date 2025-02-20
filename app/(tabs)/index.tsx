@@ -11,9 +11,6 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import TimerItem from "../../components/TimerItem";
 import CategoryHeader from "../../components/CategoryHeader";
 import NavigationBar from "../../components/NavigatonBar";
-import { useNavigation } from "@react-navigation/native";
-import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { RootStackParamList } from "../../components/AppNavigator";
 
 interface Timer {
   id: string;
