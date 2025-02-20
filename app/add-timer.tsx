@@ -29,9 +29,9 @@ export default function AddTimerScreen() {
     const newTimer = {
       id: uuidv4(),
       name,
-      duration: parseInt(duration) * 60, // Convert minutes to seconds
+      duration: parseInt(duration),
       category,
-      remainingTime: parseInt(duration) * 60,
+      remainingTime: parseInt(duration),
       isRunning: false,
     };
 
@@ -47,6 +47,13 @@ export default function AddTimerScreen() {
     router.back();
   };
 
+  const handleDurationChange = (text: string) => {
+    // Only allow numeric input
+    if (/^\d*$/.test(text)) {
+      setDuration(text);
+    }
+  };
+
   return (
     <View style={{ flex: 1, padding: 16 }}>
       <Text style={{ fontSize: 24, fontWeight: "bold", marginBottom: 16 }}>
@@ -60,10 +67,10 @@ export default function AddTimerScreen() {
         style={{ borderWidth: 1, padding: 10, marginBottom: 10 }}
       />
       <TextInput
-        placeholder="Duration (minutes)"
+        placeholder="Duration (seconds)"
         keyboardType="numeric"
         value={duration}
-        onChangeText={setDuration}
+        onChangeText={handleDurationChange}
         style={{ borderWidth: 1, padding: 10, marginBottom: 10 }}
       />
       <TextInput

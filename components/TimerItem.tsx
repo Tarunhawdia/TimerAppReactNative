@@ -121,7 +121,6 @@ export default function TimerItem({ timer, refreshTimers }: TimerItemProps) {
       startTimestamp: null,
     };
     await saveTimer(updatedTimer);
-    resetTimer();
   };
 
   // Calculate elapsed seconds for the progress bar
@@ -130,8 +129,10 @@ export default function TimerItem({ timer, refreshTimers }: TimerItemProps) {
   return (
     <View style={{ padding: 16, borderWidth: 1, marginBottom: 8 }}>
       <Text style={{ fontSize: 18 }}>{timer.name}</Text>
-      <Text style={{ fontSize: 16, color: "gray" }}>
-        {formatTime(Math.floor(currentRemaining))}
+      <Text style={{ fontSize: 16, color: "black" }}>
+        {currentRemaining > 0
+          ? formatTime(Math.floor(currentRemaining))
+          : "Completed"}
       </Text>
       <ProgressBar current={elapsed} total={timer.duration} />
       <View style={{ flexDirection: "row", marginTop: 8 }}>
