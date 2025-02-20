@@ -59,6 +59,17 @@ export default function TimerItem({ timer, refreshTimers }: TimerItemProps) {
     }
   };
 
+  // Delete timer from AsyncStorage
+  const deleteTimer = async () => {
+    const storedTimers = await AsyncStorage.getItem("timers");
+    if (storedTimers) {
+      const timers: Timer[] = JSON.parse(storedTimers);
+      const updatedTimers = timers.filter((t) => t.id !== timer.id);
+      await AsyncStorage.setItem("timers", JSON.stringify(updatedTimers));
+      refreshTimers();
+    }
+  };
+
   // Toggle between starting and pausing the timer
   const toggleStartPause = () => {
     if (timer.isRunning) {
@@ -132,8 +143,11 @@ export default function TimerItem({ timer, refreshTimers }: TimerItemProps) {
             {timer.isRunning ? "Pause" : "Start"}
           </Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={resetTimer}>
+        <TouchableOpacity onPress={resetTimer} style={{ marginRight: 10 }}>
           <Text style={{ color: "blue" }}>Reset</Text>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={deleteTimer}>
+          <Text style={{ color: "red" }}>Delete</Text>
         </TouchableOpacity>
       </View>
     </View>

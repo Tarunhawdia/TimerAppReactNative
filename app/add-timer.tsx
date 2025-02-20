@@ -33,6 +33,10 @@ export default function AddTimerScreen() {
     router.push("/");
   };
 
+  const goBack = () => {
+    router.back();
+  };
+
   return (
     <View style={{ flex: 1, padding: 16 }}>
       <Text style={{ fontSize: 24, fontWeight: "bold", marginBottom: 16 }}>
@@ -59,12 +63,20 @@ export default function AddTimerScreen() {
         style={{ borderWidth: 1, padding: 10, marginBottom: 10 }}
       />
 
-      <TouchableOpacity
-        onPress={saveTimer}
-        style={{ backgroundColor: "blue", padding: 10 }}
-      >
-        <Text style={{ color: "white", textAlign: "center" }}>Save Timer</Text>
-      </TouchableOpacity>
+      <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+        <TouchableOpacity
+          onPress={goBack}
+          style={{ backgroundColor: "blue", padding: 10 }}
+        >
+          <Text style={{ color: "white", textAlign: "center" }}>Go Back</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={saveTimer}
+          style={{ backgroundColor: "blue", padding: 10 }}
+        >
+          <Text style={{ color: "white", textAlign: "center" }}>Add Timer</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
